@@ -33,6 +33,10 @@
 #include "io.hpp"
 #include "periodic_callback.h"
 #include "gpio.hpp"
+#include "IO_uSD.h"
+#include "IO_display.hpp"
+
+#define SPEED_OBJ 15
 
 /// This is the stack size used for each of the period tasks (1Hz, 10Hz, 100Hz, and 1000Hz)
 const uint32_t PERIOD_TASKS_STACK_SIZE_BYTES = (512 * 4);
@@ -48,6 +52,8 @@ const uint32_t PERIOD_DISPATCHER_TASK_STACK_SIZE_BYTES = (512 * 3);
 /// Called once before the RTOS is started, this is a good place to initialize things once
 bool period_init(void)
 {
+	IO_uSD_init();
+	LCD_init();
     return true; // Must return true upon success
 }
 
@@ -65,6 +71,13 @@ bool period_reg_tlm(void)
 void period_1Hz(uint32_t count)
 {
 	LE.toggle(1);
+	static uint16_t rpm_clicks = 0;
+	rpm_clicks+=1; 
+	send_data(SPEED_OBJ,0,(uint16_t)rpm_clicks);
+	// if(IO_uSD_scanDirectories() == FR_OK)
+	// {
+	// 	puts("success");
+	// }
 }
 
 void period_10Hz(uint32_t count)
