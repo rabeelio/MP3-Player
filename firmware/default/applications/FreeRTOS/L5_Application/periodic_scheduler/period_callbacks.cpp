@@ -35,8 +35,12 @@
 #include "gpio.hpp"
 #include "IO_uSD.h"
 #include "IO_display.hpp"
+#include "IO_VS1053.hpp"
 
 #define SPEED_OBJ 15
+static char buffer[512];
+static uint16_t bufferOffset = 0;
+static bool oneTime = false;
 
 /// This is the stack size used for each of the period tasks (1Hz, 10Hz, 100Hz, and 1000Hz)
 const uint32_t PERIOD_TASKS_STACK_SIZE_BYTES = (512 * 4);
@@ -52,13 +56,9 @@ const uint32_t PERIOD_DISPATCHER_TASK_STACK_SIZE_BYTES = (512 * 3);
 /// Called once before the RTOS is started, this is a good place to initialize things once
 bool period_init(void)
 {
-	// if (IO_uSD_init() != FR_OK)
-	// {
-	// 	puts("FAILED TO MOUNT uSD CARD!!!");
-	// }
-	// else
-	// {
-	// 	puts("uSD card successfully mounted...");
+
+		IO_VS1053_init();
+		IO_VS1053_setVolume();
 		if(IO_uSD_findMP3Files() != FR_OK)
 		{
 			puts("ERROR: NO MP3 files found!!!");
@@ -79,7 +79,7 @@ bool period_init(void)
 		IO_uSD_print_list();
 
 
-		puts("finished");
+		// puts("finished");
 
 		// if(IO_uSD_readFile() != FR_OK)
 		// {
@@ -105,9 +105,9 @@ bool period_reg_tlm(void)
 void period_1Hz(uint32_t count)
 {
 	LE.toggle(1);
-	static uint16_t rpm_clicks = 0;
-	rpm_clicks+=1; 
-	send_data(SPEED_OBJ,0,(uint16_t)rpm_clicks);
+	// static uint16_t rpm_clicks = 0;
+	// rpm_clicks+=1; 
+	// send_data(SPEED_OBJ,0,(uint16_t)rpm_clicks);
 	// if(IO_uSD_scanDirectories() == FR_OK)
 	// {
 	// 	puts("success");
@@ -121,19 +121,53 @@ void period_1Hz(uint32_t count)
 void period_10Hz(uint32_t count)
 {
     LE.toggle(2);
-    	    		char buffer[512] = {'0'};
-    		bool fin = IO_uSD_isFinishedReading();
-    	if(fin == false)
+    	// char buffer[512] = {'0'};
+    	// bool fin = IO_uSD_isFinishedReading();
+    	// if(fin == false)
+    	// {
+	    // 	if((IO_uSD_readFile(buffer, 0) != FR_OK))
+	    // 	{
+	    // 		puts("error");
+	    // 	}
+	    // }
+	    // else
+	    // {
+	    // 		puts("finished");
+	    // }
+    	if (oneTime == false)
     	{
-	    	if((IO_uSD_readFile(buffer, 0) != FR_OK))
+    		IO_uSD_readFile(buffer, 0);
+    		oneTime = true;
+    	}
+    	// // 512 - 32 = 480 -> offset = 32
+    	// // increment the pointer such that it's pointing to the element set by the offset
+    	// // char buffer[512]; by definition, buffer is pointing to the first element in the array -> whatever buffer[0] is
+    	// // *(buffer++) // increment pointer and then dereference that value at that location
+
+    	if (bufferOffset <= 511)
+    	{
+    		if(IO_VS1053_writeSDI(buffer, &bufferOffset))
 	    	{
-	    		puts("error");
+	    		puts("wrote to VS1053");
+	    		// printf("offset: %i\n", bufferOffset);
 	    	}
-	    }
-	    else
-	    {
-	    		puts("finished");
-	    }
+	    	else
+	    	{
+	    		puts("failed to write to VS1053");
+	    	}
+    	}
+    	else
+    	{
+	    		IO_uSD_readFile(buffer, 0);
+	    		oneTime = false;
+	    		bufferOffset = 0;
+    	}
+
+
+
+
+
+
 
 }
 

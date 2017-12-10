@@ -216,8 +216,8 @@ FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
     }
 
     // printf("remainder: %i\n", IO_uSD_data.remainderInBytes);
-    printf("bytesLeftToRead: %i\n", IO_uSD_data.bytesLeftToRead);
-    printf("offset: %i\n", IO_uSD_data.offsetInBytes);
+    // printf("LTR: %i\n", IO_uSD_data.bytesLeftToRead);
+    // printf("offset: %i\n", IO_uSD_data.offsetInBytes);
     if (IO_uSD_data.bytesLeftToRead == IO_uSD_data.remainderInBytes)
     {
         // puts("test");

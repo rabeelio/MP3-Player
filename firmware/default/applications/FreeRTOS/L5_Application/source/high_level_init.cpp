@@ -94,7 +94,7 @@ void high_level_init(void)
      */
     adc0_init();
     ssp1_init();
-    ssp0_init(SYS_CFG_SPI0_CLK_MHZ);
+    // ssp0_init(SYS_CFG_SPI0_CLK_MHZ);
 
     if (!I2C2::getInstance().init(SYS_CFG_I2C2_CLK_KHZ)) {
         puts("ERROR: Possible short on SDA or SCL wire (I2C2)!");
@@ -118,9 +118,9 @@ void high_level_init(void)
      * @warning Need SSP0 init before initializing nordic wireless.
      * @warning Nordic uses timer delay, so we need the timer setup.
      */
-    if (!wireless_init()) {
-        puts("ERROR: Failed to initialize wireless");
-    }
+    // if (!wireless_init()) {
+    //     puts("ERROR: Failed to initialize wireless");
+    // }
 
     /* Add default telemetry components if telemetry is enabled */
     #if SYS_CFG_ENABLE_TLM
