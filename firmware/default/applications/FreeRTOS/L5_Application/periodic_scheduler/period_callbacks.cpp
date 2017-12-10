@@ -52,7 +52,41 @@ const uint32_t PERIOD_DISPATCHER_TASK_STACK_SIZE_BYTES = (512 * 3);
 /// Called once before the RTOS is started, this is a good place to initialize things once
 bool period_init(void)
 {
-	IO_uSD_init();
+	// if (IO_uSD_init() != FR_OK)
+	// {
+	// 	puts("FAILED TO MOUNT uSD CARD!!!");
+	// }
+	// else
+	// {
+	// 	puts("uSD card successfully mounted...");
+		if(IO_uSD_findMP3Files() != FR_OK)
+		{
+			puts("ERROR: NO MP3 files found!!!");
+		}
+		else
+		{
+			puts("Found some MP3 files...");
+		}
+		// char string1[32] = "moneytrees";
+		// char string2[32] = "1:/root/something";
+		// char string3[32] = "skrtskrt";
+		// char string4[32] = "1:/root/something/else";
+		// char string5[32] = "champion";
+		// char string6[32] = "1:/real/niggaz/only";
+		// IO_uSD_addNode(string1, string2);
+		// IO_uSD_addNode(string3, string4);
+		// IO_uSD_addNode(string5, string6);
+		IO_uSD_print_list();
+
+
+		puts("finished");
+
+		// if(IO_uSD_readFile() != FR_OK)
+		// {
+		// 	puts("ERROR: Failed to read file!!!");
+		// }
+		
+	// }
 	LCD_init();
     return true; // Must return true upon success
 }
@@ -78,15 +112,34 @@ void period_1Hz(uint32_t count)
 	// {
 	// 	puts("success");
 	// }
+
+
+
+	
 }
 
 void period_10Hz(uint32_t count)
 {
     LE.toggle(2);
+    	    		char buffer[512] = {'0'};
+    		bool fin = IO_uSD_isFinishedReading();
+    	if(fin == false)
+    	{
+	    	if((IO_uSD_readFile(buffer, 0) != FR_OK))
+	    	{
+	    		puts("error");
+	    	}
+	    }
+	    else
+	    {
+	    		puts("finished");
+	    }
+
 }
 
 void period_100Hz(uint32_t count)
 {
+
     LE.toggle(3);
 }
 

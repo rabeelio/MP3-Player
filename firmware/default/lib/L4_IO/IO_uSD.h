@@ -8,18 +8,41 @@
 
 #define THREE_BYTES 3
 #define PATH_MAX_LENGTH 256
-#define SECTOR_SIZE 	512 
+#define BUFFER_SIZE 	512 
+#define MOUNT_NOW 		1
 
 typedef struct 
 {
+	//FF parameters
 	FRESULT returnCode;
 	DIR directoryObject;
-	FILINFO fileInfo; 
+	FIL fileInfo;
 
-	char buffer[SECTOR_SIZE];
-	char path[PATH_MAX_LENGTH];
+	FIL dest;
 
+	// file parameters
+	char currentSong[32];
+	DWORD bytesLeftToRead;
+	DWORD remainderInBytes;
+	DWORD offsetInBytes;
+	bool isFileOpen;
+	bool finishedReadingFile;
 } IO_uSD_data_S;
+
+typedef struct node 
+{
+	// node data
+	char songName[32];
+	char songPath[64];
+
+	// pointer to next node
+	struct node *next;
+} IO_uSD_node_S;
+
+typedef struct 
+{
+	IO_uSD_node_S *headPtr;
+} IO_uSD_LL_data_S;
 
 typedef struct 
 {
@@ -30,13 +53,12 @@ typedef struct
 #ifdef __cplusplus
 extern "C" {
 #endif
-void IO_uSD_readSector(void);
-void IO_uSD_openFile(void);
-FRESULT IO_uSD_scanDirectories(void); 
-void IO_uSD_init(void);
-FRESULT scan_files (
-    char* path        /* Start node to be scanned (***also used as work area***) */
-);
+FRESULT IO_uSD_scanDirectoriesForMP3s(char* path); 
+bool IO_uSD_init(void);
+bool IO_uSD_findMP3Files(void);
+void IO_uSD_print_list(void);
+FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum);
+bool IO_uSD_isFinishedReading(void);
 #ifdef __cplusplus
 }
 #endif
