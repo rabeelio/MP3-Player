@@ -19,9 +19,9 @@
  */
 typedef enum
 {
-	LIB_VS1053_REG_ADDR_SCI_0 = 0x0,	// Mode Control
-	LIB_VS1053_REG_ADDR_SCI_1 = 0x1, 	// Status of VS1053B
-	LIB_VS1053_REG_ADDR_SCI_2 = 0x2,	// Built-in bass/treble control
+	LIB_VS1053_REG_ADDR_SCI_0 = 0x00,	// Mode Control
+	LIB_VS1053_REG_ADDR_SCI_1 = 0x01, 	// Status of VS1053B
+	LIB_VS1053_REG_ADDR_SCI_2 = 0x02,	// Built-in bass/treble control
 	LIB_VS1053_REG_ADDR_SCI_3 = 0x3,    // Clock freq + multiplier
 	LIB_VS1053_REG_ADDR_SCI_4 = 0x4,	// Decode time in seconds 
 	LIB_VS1053_REG_ADDR_SCI_5 = 0x5, 	// Misc. audio data

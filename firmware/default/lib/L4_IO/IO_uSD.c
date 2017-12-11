@@ -180,7 +180,7 @@ FRESULT IO_uSD_openFile(uint8_t songNum)
     char destPath[] = "1:mp3copy.txt";
     const char *filePath = getSongPath(songNum);
     returnCode = f_open(&IO_uSD_data.fileInfo, filePath, FA_READ);
-    returnCode = f_open(&IO_uSD_data.dest, destPath, FA_WRITE);
+    // returnCode = f_open(&IO_uSD_data.dest, destPath, FA_WRITE);
     IO_uSD_initializeReadParameters(songNum);
     IO_uSD_data.isFileOpen = true;
     return returnCode;
@@ -201,6 +201,8 @@ bool IO_uSD_isFinishedReading(void)
 {
     return IO_uSD_data.finishedReadingFile;
 }
+
+
 FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
 {
     FRESULT returnCode;
@@ -208,6 +210,7 @@ FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
 
     if (IO_uSD_data.isFileOpen == false)
     {
+        // printf("here\n");
         returnCode = IO_uSD_openFile(songNum);
         if (returnCode != FR_OK)
         {
@@ -222,7 +225,7 @@ FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
     {
         // puts("test");
         returnCode = f_read(&IO_uSD_data.fileInfo, buffer, IO_uSD_data.remainderInBytes, &bytesRead);
-        returnCode = f_write(&IO_uSD_data.dest, buffer, bytesRead, &bytesWritten);
+        // returnCode = f_write(&IO_uSD_data.dest, buffer, bytesRead, &bytesWritten);
 
         if (returnCode != FR_OK)
         {
@@ -237,7 +240,7 @@ FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
         // printf("sizeofbuff: %i\n", sizeof(BUFFER_SIZE));
         returnCode = f_read(&IO_uSD_data.fileInfo, buffer, BUFFER_SIZE, &bytesRead);
         // printf("bytesread: %i\n", bytesRead);
-        returnCode = f_write(&IO_uSD_data.dest, buffer, bytesRead, &bytesWritten);
+        // returnCode = f_write(&IO_uSD_data.dest, buffer, bytesRead, &bytesWritten);
         IO_uSD_data.bytesLeftToRead -= BUFFER_SIZE;
         IO_uSD_data.offsetInBytes = IO_uSD_data.fileInfo.fsize - IO_uSD_data.bytesLeftToRead;
         // printf("buffer %s\n", buffer);
@@ -249,8 +252,8 @@ static FRESULT IO_uSD_closeFile(void)
 {
     FRESULT returnCode;
     returnCode = f_close(&IO_uSD_data.fileInfo);
-    returnCode = f_close(&IO_uSD_data.dest);
-    // IO_uSD_clearReadParameters();
+    // returnCode = f_close(&IO_uSD_data.dest);
+    IO_uSD_clearReadParameters();
 
     return returnCode;
 }

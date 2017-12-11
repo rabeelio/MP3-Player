@@ -29,6 +29,71 @@
 #include "uart2.hpp"
 #include "uart3.hpp"
 #include "utilities.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "IO_VS1053.hpp"
+#include "IO_uSD.h"
+#include "eint.h"
+
+static char buffer[512];
+static uint16_t bufferOffset = 0;
+static bool oneTime = false;
+
+class playMP3: public scheduler_task{
+public:
+    playMP3(uint8_t priority) : scheduler_task("playMP3",2048,priority,NULL)
+    {
+        IO_VS1053_init();
+        IO_VS1053_setVolume();
+        IO_VS1053_setVS1053Clk();
+
+        if(IO_uSD_findMP3Files() != FR_OK)
+        {
+         puts("ERROR: NO MP3 files found!!!");
+        }
+        else
+        {
+         puts("Found some MP3 files...");
+        }
+
+        IO_uSD_print_list();
+    }
+
+    bool run(void *p){
+
+
+        if (oneTime == false)
+        {
+         IO_uSD_readFile(buffer, 0);
+         oneTime = true;
+        }
+
+        if (bufferOffset <= 511)
+        {
+         if(IO_VS1053_writeSDI(buffer, &bufferOffset))
+         {
+             // puts("wrote to VS1053");
+             // printf("offset: %i\n", bufferOffset);
+         }
+         else
+         {
+             puts("failed to write to VS1053");
+         }
+        }
+        else
+        {
+             // IO_uSD_readFile(buffer, 0);
+             oneTime = false;
+             bufferOffset = 0;
+        }
+        vTaskDelay(1);
+        return true;
+    }
+
+};
+
+
+
 
 /**
  * The main() creates tasks or "threads".  See the documentation of scheduler_task class at scheduler_task.hpp
@@ -46,6 +111,10 @@
  */
 int main(void)
 {
+
+
+
+
     /**
      * A few basic tasks for this bare-bone system :
      *      1.  Terminal task provides gateway to interact with the board through UART terminal.
@@ -57,12 +126,15 @@ int main(void)
      * control codes can be learned by typing the "learn" terminal command.
      */
     scheduler_add_task(new terminalTask(PRIORITY_HIGH));
+    scheduler_add_task(new playMP3(PRIORITY_HIGH));
+    // scheduler_add_task(new loadBuffer(PRIORITY_HIGH));
+
 
     /* Consumes very little CPU, but need highest priority to handle mesh network ACKs */
     // scheduler_add_task(new wirelessTask(PRIORITY_CRITICAL));
 
     /* Change "#if 0" to "#if 1" to run period tasks; @see period_callbacks.cpp */
-    #if 1
+    #if 0
     const bool run_1Khz = false;
     scheduler_add_task(new periodicSchedulerTask(run_1Khz));
     #endif

@@ -36,11 +36,10 @@
 #include "IO_uSD.h"
 #include "IO_display.hpp"
 #include "IO_VS1053.hpp"
+#include "utilities.h"
 
 #define SPEED_OBJ 15
-static char buffer[512];
-static uint16_t bufferOffset = 0;
-static bool oneTime = false;
+
 
 /// This is the stack size used for each of the period tasks (1Hz, 10Hz, 100Hz, and 1000Hz)
 const uint32_t PERIOD_TASKS_STACK_SIZE_BYTES = (512 * 4);
@@ -57,37 +56,23 @@ const uint32_t PERIOD_DISPATCHER_TASK_STACK_SIZE_BYTES = (512 * 3);
 bool period_init(void)
 {
 
-		IO_VS1053_init();
-		IO_VS1053_setVolume();
-		if(IO_uSD_findMP3Files() != FR_OK)
-		{
-			puts("ERROR: NO MP3 files found!!!");
-		}
-		else
-		{
-			puts("Found some MP3 files...");
-		}
-		// char string1[32] = "moneytrees";
-		// char string2[32] = "1:/root/something";
-		// char string3[32] = "skrtskrt";
-		// char string4[32] = "1:/root/something/else";
-		// char string5[32] = "champion";
-		// char string6[32] = "1:/real/niggaz/only";
-		// IO_uSD_addNode(string1, string2);
-		// IO_uSD_addNode(string3, string4);
-		// IO_uSD_addNode(string5, string6);
-		IO_uSD_print_list();
+		// IO_VS1053_init();
+		// IO_VS1053_setVolume();
+		// IO_VS1053_setVS1053Clk();
+		// LCD_init();
 
 
-		// puts("finished");
-
-		// if(IO_uSD_readFile() != FR_OK)
+		// if(IO_uSD_findMP3Files() != FR_OK)
 		// {
-		// 	puts("ERROR: Failed to read file!!!");
+		// 	puts("ERROR: NO MP3 files found!!!");
 		// }
-		
-	// }
-	LCD_init();
+		// else
+		// {
+		// 	puts("Found some MP3 files...");
+		// }
+
+		// IO_uSD_print_list();
+
     return true; // Must return true upon success
 }
 
@@ -134,52 +119,110 @@ void period_10Hz(uint32_t count)
 	    // {
 	    // 		puts("finished");
 	    // }
-    	if (oneTime == false)
-    	{
-    		IO_uSD_readFile(buffer, 0);
-    		oneTime = true;
-    	}
-    	// // 512 - 32 = 480 -> offset = 32
-    	// // increment the pointer such that it's pointing to the element set by the offset
-    	// // char buffer[512]; by definition, buffer is pointing to the first element in the array -> whatever buffer[0] is
-    	// // *(buffer++) // increment pointer and then dereference that value at that location
+    	// if (oneTime == false)
+    	// {
+    	// 	IO_uSD_readFile(buffer, 0);
+    	// 	oneTime = true;
+    	// }
+    	// // // // 512 - 32 = 480 -> offset = 32
+    	// // // // increment the pointer such that it's pointing to the element set by the offset
+    	// // // // char buffer[512]; by definition, buffer is pointing to the first element in the array -> whatever buffer[0] is
+    	// // // // *(buffer++) // increment pointer and then dereference that value at that location
 
-    	if (bufferOffset <= 511)
-    	{
-    		if(IO_VS1053_writeSDI(buffer, &bufferOffset))
-	    	{
-	    		puts("wrote to VS1053");
-	    		// printf("offset: %i\n", bufferOffset);
-	    	}
-	    	else
-	    	{
-	    		puts("failed to write to VS1053");
-	    	}
-    	}
-    	else
-    	{
-	    		IO_uSD_readFile(buffer, 0);
-	    		oneTime = false;
-	    		bufferOffset = 0;
-    	}
-
-
-
-
-
-
-
+    	// if (bufferOffset <= 511)
+    	// {
+    	// 	if(IO_VS1053_writeSDI(buffer, &bufferOffset))
+	    // 	{
+	    // 		// puts("wrote to VS1053");
+	    // 		// printf("offset: %i\n", bufferOffset);
+	    // 	}
+	    // 	else
+	    // 	{
+	    // 		puts("failed to write to VS1053");
+	    // 	}
+    	// }
+    	// else
+    	// {
+	    // 		IO_uSD_readFile(buffer, 0);
+	    // 		oneTime = false;
+	    // 		bufferOffset = 0;
+    	// }
 }
+static uint16_t bufferIndex = 0;
 
 void period_100Hz(uint32_t count)
 {
+    	// if (oneTime == false)
+    	// {
+    	// 	IO_uSD_readFile(buffer, 0);
+    	// 	oneTime = true;
+    	// }
+    	// // // 512 - 32 = 480 -> offset = 32
+    	// // // increment the pointer such that it's pointing to the element set by the offset
+    	// // // char buffer[512]; by definition, buffer is pointing to the first element in the array -> whatever buffer[0] is
+    	// // // *(buffer++) // increment pointer and then dereference that value at that location
 
-    LE.toggle(3);
+    	// if (bufferOffset <= 511)
+    	// {
+    	// 	if(IO_VS1053_writeSDI(buffer, &bufferOffset))
+	    // 	{
+	    // 		// LE.on(3);
+	    // 		// puts("wrote to VS1053");
+	    // 		// printf("offset: %i\n", bufferOffset);
+	    // 	}
+	    // 	else
+	    // 	{
+	    // 		// LE.off(3);
+	    // 		// puts("failed to write to VS1053");
+	    // 	}
+    	// }
+    	// else
+    	// {
+	    // 		IO_uSD_readFile(buffer, 0);
+	    // 		oneTime = false;
+	    // 		bufferOffset = 0;
+    	// }
+
+		// if (oneTime == false)
+  //   	{
+  //   		IO_uSD_readFile(buffer, 0);
+  //   		oneTime = true;
+  //   	}
+
+
+
 }
 
 // 1Khz (1ms) is only run if Periodic Dispatcher was configured to run it at main():
 // scheduler_add_task(new periodicSchedulerTask(run_1Khz = true));
 void period_1000Hz(uint32_t count)
 {
-    LE.toggle(4);
+
+    	// // 512 - 32 = 480 -> offset = 32
+    	// // increment the pointer such that it's pointing to the element set by the offset
+    	// // char buffer[512]; by definition, buffer is pointing to the first element in the array -> whatever buffer[0] is
+    	// // *(buffer++) // increment pointer and then dereference that value at that location
+
+    	// if (bufferOffset <= 1023) //1023
+    	// {
+    	// 	if(IO_VS1053_writeSDI(buffer, &bufferOffset))
+	    // 	{
+	    // 		// LE.on(3);
+	    // 		// puts("wrote to VS1053");
+	    // 		// printf("offset: %i\n", bufferOffset);
+	    // 	}
+	    // 	else
+	    // 	{
+	    // 		// LE.off(3);
+	    // 		puts("failed to write to VS1053");
+	    // 	}
+    	// }
+    	// else
+    	// {
+	    // 		// IO_uSD_readFile(buffer, 0);
+	    // 		oneTime = false;
+	    // 		bufferOffset = 0;
+    	// }
+    	// delay_ms(0.5);
+    // LE.toggle(4);
 }

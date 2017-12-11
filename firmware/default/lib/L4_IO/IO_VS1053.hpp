@@ -13,6 +13,8 @@
 void IO_VS1053_init(void);
 bool IO_VS1053_writeSDI(char *buffer, uint16_t *offset);
 void IO_VS1053_setVolume(void);
+void IO_VS1053_SDI_CS(bool status);
+void IO_VS1053_setVS1053Clk(void);
 
 
 
