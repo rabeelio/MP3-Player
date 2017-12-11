@@ -30,7 +30,7 @@ typedef enum
 	LIB_VS1053_REG_ADDR_SCI_8 = 0x8,	// Stream header data 0
 	LIB_VS1053_REG_ADDR_SCI_9 = 0x9,	// Stream header data 1
 	LIB_VS1053_REG_ADDR_SCI_10 = 0xA,	// Start address of application	
-	LIB_VS1053_REG_ADDR_SCI_11 = 0x0B,	// Volume Control	
+	LIB_VS1053_REG_ADDR_SCI_11 = 0xB,	// Volume Control	
 	LIB_VS1053_REG_ADDR_SCI_12 = 0xC,	// Application control register 0
 	LIB_VS1053_REG_ADDR_SCI_13 = 0xD,	// Application control register 1
 	LIB_VS1053_REG_ADDR_SCI_14 = 0xE,	// Application control register 2

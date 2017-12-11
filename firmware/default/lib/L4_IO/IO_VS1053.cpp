@@ -40,44 +40,13 @@ void IO_VS1053_init(void)
 
 void IO_VS1053_setVolume(void)
 {
-	// char x;
-	// 	SCI_CS.setLow();
-	// x = ssp0_exchange_byte(0x02);
-	// // printf("char1 : %02x\n", x);
-	// x = ssp0_exchange_byte(0x00);
-	// // printf("char2 : %02x\n", x);
-	// x = ssp0_exchange_byte(0x48);
-	// // printf("char3 : %02x\n", x);
-	// x = ssp0_exchange_byte(0x40);
-	// // printf("char4 : %02x\n", x);
-	// SCI_CS.setHigh();
 
-	
-	// // SCI_CS.setLow();
-	// // x = ssp0_exchange_byte(0x02);
-	// // // printf("char1 : %02x\n", x);
-	// // x = ssp0_exchange_byte(0x0b);
-	// // // printf("char2 : %02x\n", x);
-	// // x = ssp0_exchange_byte(0x00);
-	// // // printf("char3 : %02x\n", x);
-	// // x = ssp0_exchange_byte(0x00);
-	// // // printf("char4 : %02x\n", x);
-	// // SCI_CS.setHigh();
-
-
-
-
-
-	// SCI_CS.setLow();
-	// x = ssp0_exchange_byte(0x03);
-	// // printf("char1 : %02x\n", x);
-	// x = ssp0_exchange_byte(0x0b);
-	// // printf("char2 : %02x\n", x);
-	// x = ssp0_exchange_byte(0xff);
-	// // printf("char3 : %02x\n", x);
-	// x = ssp0_exchange_byte(0xff);
-	// // printf("char4 : %02x\n", x);
-	// SCI_CS.setHigh();
+	SCI_CS.setLow();
+	ssp0_exchange_byte(0x02);
+	ssp0_exchange_byte(LIB_VS1053_REG_ADDR_SCI_11);
+	ssp0_exchange_byte(0x0a);
+	ssp0_exchange_byte(0x0a);
+	SCI_CS.setHigh();
 }
 
 void IO_VS1053_setVS1053Clk(void)

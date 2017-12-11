@@ -18,7 +18,6 @@ static bool IO_uSD_checkIfMP3(char *string, uint8_t size);
 static void IO_uSD_addNode(char *songName, char *songPath);
 static char* getSongPath(uint8_t songNum);
 static char* getSongName(uint8_t songNum);
-static FRESULT IO_uSD_closeFile(void);
 
 bool IO_uSD_init(void)
 {
@@ -248,7 +247,7 @@ FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
     return returnCode;
 }
 
-static FRESULT IO_uSD_closeFile(void)
+FRESULT IO_uSD_closeFile(void)
 {
     FRESULT returnCode;
     returnCode = f_close(&IO_uSD_data.fileInfo);

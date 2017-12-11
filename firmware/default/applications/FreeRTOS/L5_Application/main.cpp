@@ -38,6 +38,7 @@
 static char buffer[512];
 static uint16_t bufferOffset = 0;
 static bool oneTime = false;
+static uint8_t num = 0;
 
 class playMP3: public scheduler_task{
 public:
@@ -61,11 +62,43 @@ public:
 
     bool run(void *p){
 
+        if(SW.getSwitch(1))
+        {
+            num=0;
+            IO_uSD_closeFile();
+            oneTime = false;
+            bufferOffset = 0;
+        }
+
+        if(SW.getSwitch(2))
+        {
+            num = 1;
+            IO_uSD_closeFile();
+            oneTime = false;
+            bufferOffset = 0;
+        }
+
+        if(SW.getSwitch(3))
+        {
+            num = 2;
+            IO_uSD_closeFile();
+            oneTime = false;
+            bufferOffset = 0;
+        }
+
+        if(SW.getSwitch(4))
+        {
+            num = 9;
+            IO_uSD_closeFile();
+            oneTime = false;
+            bufferOffset = 0;
+        }
 
         if (oneTime == false)
         {
-         IO_uSD_readFile(buffer, 0);
-         oneTime = true;
+             IO_uSD_readFile(buffer, num);
+             oneTime = true;
+
         }
 
         if (bufferOffset <= 511)
@@ -77,7 +110,7 @@ public:
          }
          else
          {
-             puts("failed to write to VS1053");
+             // puts("failed to write to VS1053");
          }
         }
         else
