@@ -3,7 +3,11 @@
 #include "stdlib.h"
 
 extern const IO_uSD_config_S IO_uSD_config;
-IO_uSD_LL_data_S IO_uSD_LL_data = { .headPtr = NULL };
+IO_uSD_LL_data_S IO_uSD_LL_data = 
+{ 
+    .headPtr = NULL 
+};
+
 IO_uSD_data_S IO_uSD_data = 
 {
     .currentSong = "NULL",
@@ -185,31 +189,19 @@ FRESULT IO_uSD_openFile(uint8_t songNum)
     return returnCode;
 }
 
-
-    // 5, 066, 571 
-    // buffer size = 512
-    // 5,066,571 / 512 | remaineder will always be less than the buffer 
-    // Qoutient = 9895 | Remainder = 331
-    //readFIle() -> 5066571 - 512 = 5066059 | 1
-    //readFile() -> 5066571 - 512 = 5065547 | 2
-    // . . .
-    // last chunk - 512 = 331 
-
-    // if ()
 bool IO_uSD_isFinishedReading(void)
 {
     return IO_uSD_data.finishedReadingFile;
 }
 
 
-FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
+FRESULT IO_uSD_readMP3(char *buffer, uint8_t songNum)
 {
     FRESULT returnCode;
     UINT bytesRead, bytesWritten;
 
     if (IO_uSD_data.isFileOpen == false)
     {
-        // printf("here\n");
         returnCode = IO_uSD_openFile(songNum);
         if (returnCode != FR_OK)
         {
@@ -217,12 +209,9 @@ FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
         }
     }
 
-    // printf("remainder: %i\n", IO_uSD_data.remainderInBytes);
-    // printf("LTR: %i\n", IO_uSD_data.bytesLeftToRead);
-    // printf("offset: %i\n", IO_uSD_data.offsetInBytes);
     if (IO_uSD_data.bytesLeftToRead == IO_uSD_data.remainderInBytes)
     {
-        // puts("test");
+
         returnCode = f_read(&IO_uSD_data.fileInfo, buffer, IO_uSD_data.remainderInBytes, &bytesRead);
         // returnCode = f_write(&IO_uSD_data.dest, buffer, bytesRead, &bytesWritten);
 
@@ -236,13 +225,10 @@ FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
     else
     {
         returnCode = f_lseek(&IO_uSD_data.fileInfo, IO_uSD_data.offsetInBytes);
-        // printf("sizeofbuff: %i\n", sizeof(BUFFER_SIZE));
         returnCode = f_read(&IO_uSD_data.fileInfo, buffer, BUFFER_SIZE, &bytesRead);
-        // printf("bytesread: %i\n", bytesRead);
         // returnCode = f_write(&IO_uSD_data.dest, buffer, bytesRead, &bytesWritten);
         IO_uSD_data.bytesLeftToRead -= BUFFER_SIZE;
         IO_uSD_data.offsetInBytes = IO_uSD_data.fileInfo.fsize - IO_uSD_data.bytesLeftToRead;
-        // printf("buffer %s\n", buffer);
     }
     return returnCode;
 }
@@ -256,66 +242,6 @@ FRESULT IO_uSD_closeFile(void)
 
     return returnCode;
 }
-
-// FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum)
-// {
-//     FRESULT returnCode;
-
-//     if (IO_uSD_data.isFileOpen == false)
-//     {
-//         returnCode = f_open(&IO_uSD_data.fileInfo, filePath, FA_READ);
-//         IO_uSD_data.isFileOpen = true;
-//         IO_uSD_initializeReadParameters(songNum);
-//     }
-
-//     // are we at EOF
-//     if (f_eof(&IO_uSD_data.fileInfo) == false)
-//     {
-//         // read 512 bytes
-//         returnCode = f_read(&IO_uSD_data.fileInfo, buffer, sizeof(buffer), &bytesRead);
-//     }
-//     else
-//     {
-//         f_close(&IO_uSD_data.fileInfo);
-//         IO_uSD_clearReadParameters();
-//     }
-    
-
-
-
-
-    // 5, 066, 571 
-    // buffer size = 512
-    // 5,066,571 / 512 | remaineder will always be less than the buffer 
-    // Qoutient = 9895 | Remainder = 331
-    //readFIle() -> 5066571 - 512 = 5066059 | 1
-    //readFile() -> 5066571 - 512 = 5065547 | 2
-    // . . .
-    // last chunk - 512 = 331 
-
-    // if ()
-
-
-
-    // FRESULT returnCode;
-    // FIL dest;
-    // char buffer[1024];
-    // UINT bytesRead, bytesWritten;
-    // char destPath[] = "1:mp3copy.txt";
-    // const char *filePath = getSongPath(0); // songs are 0 indexed
-    // printf("file path: %s\n", filePath);
-    // returnCode = f_open(&IO_uSD_data.fileInfo, filePath, FA_READ);
-    // returnCode = f_open(&dest, destPath, FA_WRITE);
-    // returnCode = f_read(&IO_uSD_data.fileInfo, buffer, sizeof(buffer), &bytesRead);
-    // returnCode = f_write(&dest, buffer, bytesRead, &bytesWritten);
-    // printf("bytes read: %i\n", bytesRead);
-    // printf("bytes written: %i\n", bytesWritten);
-
-    // f_close(&IO_uSD_data.fileInfo);
-    // f_close(&dest);
-
-//     return returnCode;
-// }
 
 static char* getSongPath(uint8_t songNum)
 {
@@ -338,6 +264,11 @@ static char* getSongPath(uint8_t songNum)
     }
     printf("%s\n", currentNode->songPath);
     return currentNode->songPath;
+}
+
+char* IO_uSD_getCurrentSongsName(void)
+{
+    return IO_uSD_data.currentSong;
 }
 
 static char* getSongName(uint8_t songNum)

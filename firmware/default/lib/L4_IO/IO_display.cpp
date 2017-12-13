@@ -64,6 +64,48 @@ static bool if_NACK(void)
 
 }
 
+void read_slider(void)
+{
+	int checksum;
+	int read_cmd = 0;
+	int object_ID = 4;
+	int data = 0;
+	char buf;
+
+	// Uart2::getInstance().putChar(read_cmd, 0);
+	// Uart2::getInstance().putChar(object_ID, 0);
+	// Uart2::getInstance().putChar(data, 0);
+	// checksum = read_cmd ^ object_ID ^ 0 ^ data;
+	// Uart2::getInstance().putChar(checksum, 0);
+
+	// if (if_ACK())
+	// {
+		printf("Successfully transmitted data!\n");
+		received_data(&buf);
+		printf("byte 1: %02x\n", buf);
+		received_data(&buf);
+		printf("byte 2: %02x\n", buf);
+		received_data(&buf);
+		printf("byte 3: %02x\n", buf);
+		received_data(&buf);
+		printf("byte 4: %02x\n", buf);
+		received_data(&buf);
+		printf("byte 5: %02x\n", buf);
+		received_data(&buf);
+		printf("byte 6: %02x\n", buf);
+	// }
+	// else if (if_NACK())
+	// {
+	// 	printf("NACK received.\n");
+	// }
+	// else
+	// {
+	// 	printf("Invalid data sent to LCD.\n");
+	// }
+	// puts("fired");
+
+}
+
 void send_data(char object_ID, char object_index, int data)
 {
 	int checksum;
@@ -82,15 +124,15 @@ void send_data(char object_ID, char object_index, int data)
 
 	if (if_ACK())
 	{
-		printf("Successfully transmitted data!\n");
+		// printf("Successfully transmitted data!\n");
 	}
 	else if (if_NACK())
 	{
-		printf("NACK received.\n");
+		// printf("NACK received.\n");
 	}
 	else
 	{
-		printf("Invalid data sent to LCD.\n");
+		// printf("Invalid data sent to LCD.\n");
 	}
 
 	return;

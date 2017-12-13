@@ -34,27 +34,58 @@
 #include "IO_VS1053.hpp"
 #include "IO_uSD.h"
 #include "eint.h"
+#include "IO_display.hpp"
+#define SPEED_OBJ 15
 
 static char buffer[512];
 static uint16_t bufferOffset = 0;
 static bool oneTime = false;
 static uint8_t num = 0;
+static char screenText[] = "sunny leone";
+
+// display task read/write -> sends queue data to playMP3 task 
+
+
+class display: public scheduler_task{
+public:
+    display(uint8_t priority) : scheduler_task("display",2048,priority,NULL)
+    {
+        LCD_init();
+        // sprintf(screenText, "%s", "sunny leone");
+
+
+    }
+
+    bool run(void *p)
+    {
+        // send_static_text(0, IO_uSD_getCurrentSongsName());
+        // read_slider();
+        // send_static_text(1, screenText);
+        // send_static_text(2, screenText);
+        // static uint16_t rpm_clicks = 0;
+        // rpm_clicks+=1; 
+        // send_data(SPEED_OBJ,0,(uint16_t)rpm_clicks);
+        vTaskDelay(1000);
+        return true;
+    }
+};
 
 class playMP3: public scheduler_task{
 public:
     playMP3(uint8_t priority) : scheduler_task("playMP3",2048,priority,NULL)
     {
         IO_VS1053_init();
-        IO_VS1053_setVolume();
+        // IO_VS1053_setVolume(100);
         IO_VS1053_setVS1053Clk();
+        
 
         if(IO_uSD_findMP3Files() != FR_OK)
         {
-         puts("ERROR: NO MP3 files found!!!");
+            puts("ERROR: NO MP3 files found!!!");
         }
         else
         {
-         puts("Found some MP3 files...");
+            puts("Found some MP3 files...");
         }
 
         IO_uSD_print_list();
@@ -96,22 +127,22 @@ public:
 
         if (oneTime == false)
         {
-             IO_uSD_readFile(buffer, num);
+             IO_uSD_readMP3(buffer, num);
              oneTime = true;
 
         }
 
         if (bufferOffset <= 511)
         {
-         if(IO_VS1053_writeSDI(buffer, &bufferOffset))
-         {
-             // puts("wrote to VS1053");
-             // printf("offset: %i\n", bufferOffset);
-         }
-         else
-         {
-             // puts("failed to write to VS1053");
-         }
+             if(IO_VS1053_writeSDI(buffer, &bufferOffset))
+             {
+                 // puts("wrote to VS1053");
+                 // printf("offset: %i\n", bufferOffset);
+             }
+             else
+             {
+                 // puts("failed to write to VS1053");
+             }
         }
         else
         {
@@ -145,7 +176,7 @@ public:
 int main(void)
 {
 
-
+    eint3_enable_port0(29, eint_rising_edge, read_slider);
 
 
     /**
@@ -160,7 +191,7 @@ int main(void)
      */
     scheduler_add_task(new terminalTask(PRIORITY_HIGH));
     scheduler_add_task(new playMP3(PRIORITY_HIGH));
-    // scheduler_add_task(new loadBuffer(PRIORITY_HIGH));
+    scheduler_add_task(new display(PRIORITY_HIGH));
 
 
     /* Consumes very little CPU, but need highest priority to handle mesh network ACKs */

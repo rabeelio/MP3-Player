@@ -7,8 +7,12 @@
 
 #define IO_VS1053_INIT_SCLK_MHZ 1
 #define IO_VS1053_READY_TO_RECEIVE_DATA 1
-#define IO_VS1053_NOT_READY_TO_RECEIVE_DATA 0
+#define IO_VS1053_VOLUME_SILENCE 65278 // 65278
 
+#define IO_VS1053_GET_HIGH_BYTE(var) (var >> 8)
+#define IO_VS1053_GET_LOW_BYTE(var)  (var & 0x00FF)
+#define IO_VS1053_VOLUME_SLOPE (IO_VS1053_VOLUME_SILENCE / 100)
+						
 static GPIO DREQ(P1_20);
 static GPIO SCI_CS(P1_22);
 static GPIO SDI_CS(P1_23);
@@ -34,68 +38,66 @@ void IO_VS1053_init(void)
 	RESET.setHigh();
 	delay_ms(50);
 
-	setlocale(LC_ALL, "");
+	// setlocale(LC_ALL, "");
 }
 
 
-void IO_VS1053_setVolume(void)
+void IO_VS1053_setVolume(uint16_t percentage)
 {
+	// by defintion, silence = 65278, max loudness = 0
+	// y = mx + b
+	// y = -65278/100x + 65278
+	// y = -652.78x + 65278, where x = percentage
+
+	uint16_t volume = IO_VS1053_VOLUME_SILENCE - (IO_VS1053_VOLUME_SLOPE * percentage);
+	printf("vol high : %02x\n", IO_VS1053_GET_HIGH_BYTE(volume));
+	printf("vol low: %02x\n", IO_VS1053_GET_LOW_BYTE(volume));
 
 	SCI_CS.setLow();
-	ssp0_exchange_byte(0x02);
+	ssp0_exchange_byte(LIB_VS1053_SPI_WRITE_CMD);
 	ssp0_exchange_byte(LIB_VS1053_REG_ADDR_SCI_11);
-	ssp0_exchange_byte(0x0a);
-	ssp0_exchange_byte(0x0a);
+	ssp0_exchange_byte(IO_VS1053_GET_HIGH_BYTE(volume));
+	ssp0_exchange_byte(IO_VS1053_GET_LOW_BYTE(volume));
 	SCI_CS.setHigh();
 }
 
 void IO_VS1053_setVS1053Clk(void)
 {
 	SCI_CS.setLow();
-	ssp0_exchange_byte(0x02);
+	ssp0_exchange_byte(LIB_VS1053_SPI_WRITE_CMD);
 	ssp0_exchange_byte(LIB_VS1053_REG_ADDR_SCI_3);
 	ssp0_exchange_byte(0x80);
 	ssp0_exchange_byte(0x00);
 	SCI_CS.setHigh();
 	delay_ms(1);
 	SCI_CS.setLow();
-	ssp0_exchange_byte(0x03);
+	ssp0_exchange_byte(LIB_VS1053_SPI_READ_CMD);
 	ssp0_exchange_byte(LIB_VS1053_REG_ADDR_SCI_3);
 	ssp0_exchange_byte(0xff);
 	ssp0_exchange_byte(0xff);
 	SCI_CS.setHigh();
 	delay_ms(1);
 
+	// adjust SPI clock to compensate for shield's new internal clock setting 
 	ssp0_set_max_clock(5);
-
 }
-
 
 bool IO_VS1053_writeSDI(char *buffer, uint16_t *offset)
 {
 	//check if DREQ is high | high = VS1053 ready to receive data
 	bool success = false;
 
-	uint16_t localOffset = *offset;				// 0 // 33
-	uint16_t localOffsetMax = (*offset + 32);  // 32 // 36
-	// printf("localOffset %i\n", *offset);
-	if (DREQ.read()) 
+	uint16_t localOffset = *offset;				
+	uint16_t localOffsetMax = (*offset + 32); 
+
+	if (DREQ.read() == IO_VS1053_READY_TO_RECEIVE_DATA) 
 	{
 		portENTER_CRITICAL();
 		SDI_CS.setLow();
 		for (uint16_t i=localOffset; i<localOffsetMax; i++)
 		{
-			// printf("i: %i\n", i);
-			// printf("b: %lc\n", buffer[i]);
-			
 			(void)ssp0_exchange_byte(buffer[i]);
-			// printf("returned: %c\n", x);
-			// printf("o: %i\n", *offset);
-			// printf("%lc", (buffer[i]));
 			(*offset)++; // increment offset value by reference | derference and increment offset
-			// printf("o %i\n", *offset);			 
-			//1,2,3,4,5...,33
-			//33, 34 , 35, 36, ..., 68
 		}
 		SDI_CS.setHigh();
 		portEXIT_CRITICAL();
@@ -107,16 +109,4 @@ bool IO_VS1053_writeSDI(char *buffer, uint16_t *offset)
 	}
 	
 	return success;
-}
-
-void IO_VS1053_SDI_CS(bool status)
-{
-	if (status)
-	{
-		SDI_CS.setHigh();
-	}
-	else
-	{
-		SDI_CS.setLow();
-	}
 }

@@ -57,9 +57,10 @@ FRESULT IO_uSD_scanDirectoriesForMP3s(char* path);
 bool IO_uSD_init(void);
 bool IO_uSD_findMP3Files(void);
 void IO_uSD_print_list(void);
-FRESULT IO_uSD_readFile(char *buffer, uint8_t songNum);
+FRESULT IO_uSD_readMP3(char *buffer, uint8_t songNum);
 bool IO_uSD_isFinishedReading(void);
 FRESULT IO_uSD_closeFile(void);
+char* IO_uSD_getCurrentSongsName(void);
 #ifdef __cplusplus
 }
 #endif
