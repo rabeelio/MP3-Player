@@ -7,11 +7,12 @@
 
 #define IO_VS1053_INIT_SCLK_MHZ 1
 #define IO_VS1053_READY_TO_RECEIVE_DATA 1
-#define IO_VS1053_VOLUME_SILENCE 65278 // 65278
+#define IO_VS1053_VOLUME_SILENCE 150.0f /// 75dB 
+#define IO_VS1053_VOLUME_OFFSET	 15.0f  // 5db | MAX FOR SPEAKERS BEING USES!
 
-#define IO_VS1053_GET_HIGH_BYTE(var) (var >> 8)
-#define IO_VS1053_GET_LOW_BYTE(var)  (var & 0x00FF)
-#define IO_VS1053_VOLUME_SLOPE (IO_VS1053_VOLUME_SILENCE / 100)
+#define IO_VS1053_GET_HIGH_BYTE(var) (var >> 8) & 0xFF
+#define IO_VS1053_GET_LOW_BYTE(var)  (var & 0xFF)
+#define IO_VS1053_VOLUME_SLOPE (IO_VS1053_VOLUME_SILENCE / 100.0f)
 						
 static GPIO DREQ(P1_20);
 static GPIO SCI_CS(P1_22);
@@ -44,21 +45,50 @@ void IO_VS1053_init(void)
 
 void IO_VS1053_setVolume(uint16_t percentage)
 {
+	if ((percentage > 95) ||  (percentage > 100))
+	{
+		percentage = 100;
+	}
+	else if(percentage < 0)
+	{
+		percentage = 0;
+	}
+
+
 	// by defintion, silence = 65278, max loudness = 0
 	// y = mx + b
 	// y = -65278/100x + 65278
 	// y = -652.78x + 65278, where x = percentage
 
-	uint16_t volume = IO_VS1053_VOLUME_SILENCE - (IO_VS1053_VOLUME_SLOPE * percentage);
-	printf("vol high : %02x\n", IO_VS1053_GET_HIGH_BYTE(volume));
-	printf("vol low: %02x\n", IO_VS1053_GET_LOW_BYTE(volume));
 
+	// my speaker max: 5db or 0.5W or 0x0a0a
+	// formula: 5db/0.5 = 10 = 0x0a
+
+	// y = mx + b
+	// y = -150/100x + 150
+	// y = -1.5x + 150, where x = percentage
+	printf("percentage: %i\n", percentage);
+	uint16_t volume = ((IO_VS1053_VOLUME_SILENCE - (IO_VS1053_VOLUME_SLOPE * (float)percentage)) + IO_VS1053_VOLUME_OFFSET);
+	printf("volume: %02x\n", volume);
+	// taskDISABLE_INTERRUPTS();
+	if (percentage != 0)
+	{
 	SCI_CS.setLow();
 	ssp0_exchange_byte(LIB_VS1053_SPI_WRITE_CMD);
 	ssp0_exchange_byte(LIB_VS1053_REG_ADDR_SCI_11);
-	ssp0_exchange_byte(IO_VS1053_GET_HIGH_BYTE(volume));
-	ssp0_exchange_byte(IO_VS1053_GET_LOW_BYTE(volume));
+	ssp0_exchange_byte(volume); // left channel
+	ssp0_exchange_byte(volume); // right channel
 	SCI_CS.setHigh();
+	}
+	// taskENABLE_INTERRUPTS();
+	// delay_ms(1);
+	// SCI_CS.setLow();
+	// ssp0_exchange_byte(LIB_VS1053_SPI_READ_CMD);
+	// ssp0_exchange_byte(LIB_VS1053_REG_ADDR_SCI_11);
+	// ssp0_exchange_byte(0xff);
+	// ssp0_exchange_byte(0xff);
+	// SCI_CS.setHigh();
+	// delay_ms(1);
 }
 
 void IO_VS1053_setVS1053Clk(void)
@@ -92,7 +122,7 @@ bool IO_VS1053_writeSDI(char *buffer, uint16_t *offset)
 
 	if (DREQ.read() == IO_VS1053_READY_TO_RECEIVE_DATA) 
 	{
-		portENTER_CRITICAL();
+		taskENTER_CRITICAL();
 		SDI_CS.setLow();
 		for (uint16_t i=localOffset; i<localOffsetMax; i++)
 		{
@@ -100,7 +130,7 @@ bool IO_VS1053_writeSDI(char *buffer, uint16_t *offset)
 			(*offset)++; // increment offset value by reference | derference and increment offset
 		}
 		SDI_CS.setHigh();
-		portEXIT_CRITICAL();
+		taskEXIT_CRITICAL();
 		success = true;
 	}
 	else

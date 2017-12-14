@@ -2,6 +2,8 @@
 #include "IO_uSD_componentSpecific.h"
 #include "stdlib.h"
 
+static bool isSongFin = false;
+
 extern const IO_uSD_config_S IO_uSD_config;
 IO_uSD_LL_data_S IO_uSD_LL_data = 
 { 
@@ -21,7 +23,7 @@ IO_uSD_data_S IO_uSD_data =
 static bool IO_uSD_checkIfMP3(char *string, uint8_t size);
 static void IO_uSD_addNode(char *songName, char *songPath);
 static char* getSongPath(uint8_t songNum);
-static char* getSongName(uint8_t songNum);
+
 
 bool IO_uSD_init(void)
 {
@@ -168,6 +170,7 @@ static void IO_uSD_addNode(char *songName, char *songPath)
 static void IO_uSD_initializeReadParameters(uint8_t songNum)
 {
     strcpy(IO_uSD_data.currentSong, getSongName(songNum));
+    // send_static_text(0, IO_uSD_getCurrentSongsName());
     IO_uSD_data.bytesLeftToRead = IO_uSD_data.fileInfo.fsize;
     IO_uSD_data.remainderInBytes = IO_uSD_data.fileInfo.fsize % BUFFER_SIZE;
 }
@@ -189,9 +192,16 @@ FRESULT IO_uSD_openFile(uint8_t songNum)
     return returnCode;
 }
 
+
+
 bool IO_uSD_isFinishedReading(void)
 {
-    return IO_uSD_data.finishedReadingFile;
+    // return IO_uSD_data.finishedReadingFile;
+    return isSongFin;
+}
+void IO_uSD_clearSongFin(void)
+{
+    isSongFin = false;
 }
 
 
@@ -203,10 +213,10 @@ FRESULT IO_uSD_readMP3(char *buffer, uint8_t songNum)
     if (IO_uSD_data.isFileOpen == false)
     {
         returnCode = IO_uSD_openFile(songNum);
-        if (returnCode != FR_OK)
-        {
-            // puts("failed to open file.");
-        }
+        // if (returnCode != FR_OK)
+        // {
+        //     // puts("failed to open file.");
+        // }
     }
 
     if (IO_uSD_data.bytesLeftToRead == IO_uSD_data.remainderInBytes)
@@ -215,11 +225,12 @@ FRESULT IO_uSD_readMP3(char *buffer, uint8_t songNum)
         returnCode = f_read(&IO_uSD_data.fileInfo, buffer, IO_uSD_data.remainderInBytes, &bytesRead);
         // returnCode = f_write(&IO_uSD_data.dest, buffer, bytesRead, &bytesWritten);
 
-        if (returnCode != FR_OK)
-        {
-            // puts("failed to either read or write remainder");
-        }
-        IO_uSD_data.finishedReadingFile = true;
+        // if (returnCode != FR_OK)
+        // {
+        //     // puts("failed to either read or write remainder");
+        // }
+        // IO_uSD_data.finishedReadingFile = true;
+        isSongFin = true;
         IO_uSD_closeFile();
     }
     else
@@ -269,9 +280,10 @@ static char* getSongPath(uint8_t songNum)
 char* IO_uSD_getCurrentSongsName(void)
 {
     return IO_uSD_data.currentSong;
+
 }
 
-static char* getSongName(uint8_t songNum)
+char* getSongName(uint8_t songNum)
 {
     IO_uSD_node_S *currentNode = IO_uSD_LL_data.headPtr;
 

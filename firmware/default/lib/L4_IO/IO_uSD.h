@@ -8,7 +8,7 @@
 
 #define THREE_BYTES 3
 #define PATH_MAX_LENGTH 256
-#define BUFFER_SIZE 	512 
+#define BUFFER_SIZE 	512 // 512 
 #define MOUNT_NOW 		1
 
 typedef struct 
@@ -61,6 +61,9 @@ FRESULT IO_uSD_readMP3(char *buffer, uint8_t songNum);
 bool IO_uSD_isFinishedReading(void);
 FRESULT IO_uSD_closeFile(void);
 char* IO_uSD_getCurrentSongsName(void);
+char* getSongName(uint8_t songNum);
+void IO_uSD_clearSongFin(void);
+
 #ifdef __cplusplus
 }
 #endif

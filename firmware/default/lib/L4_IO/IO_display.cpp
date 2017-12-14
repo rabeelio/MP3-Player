@@ -1,10 +1,3 @@
-/*
- * Motor_LCD.cpp
- *
- *  Created on: Oct 30, 2017
- *      Author: Sophia Quan
- */
-
 
 #include "stdio.h"
 #include "stdlib.h"
@@ -12,6 +5,21 @@
 #include "utilities.h"
 #include <string.h>
 #include "IO_display.hpp"
+#include "IO_VS1053.hpp"
+#include "semphr.h"
+#include "scheduler_task.hpp"
+
+
+extern SemaphoreHandle_t testSem;
+SemaphoreHandle_t testSem = 0;
+
+extern SemaphoreHandle_t nextSong;
+SemaphoreHandle_t nextSong = 0;
+
+extern SemaphoreHandle_t previousSong;
+SemaphoreHandle_t previousSong = 0;
+
+
 
 
 #define LCD_UART_BAUD	(9600)
@@ -25,6 +33,10 @@ enum
 
 void LCD_init(void)
 {
+	testSem = xSemaphoreCreateBinary();
+	nextSong = xSemaphoreCreateBinary();
+	previousSong = xSemaphoreCreateBinary();
+
 	Uart2::getInstance().init(LCD_UART_BAUD, LCD_TX_SIZE, LCD_RX_SIZE);
 	return;
 }
@@ -64,8 +76,27 @@ static bool if_NACK(void)
 
 }
 
+void sliderISR(void)
+{
+	puts("fired");
+	xSemaphoreGiveFromISR(testSem, NULL);
+}
+
+static int hex2int(char ch)
+{
+    if (ch >= '0' && ch <= '9')
+        return ch - '0';
+    if (ch >= 'A' && ch <= 'F')
+        return ch - 'A' + 10;
+    if (ch >= 'a' && ch <= 'f')
+        return ch - 'a' + 10;
+    return -1;
+}
+
 void read_slider(void)
 {
+
+	// portDISABLE_INTERRUPTS();
 	int checksum;
 	int read_cmd = 0;
 	int object_ID = 4;
@@ -78,21 +109,26 @@ void read_slider(void)
 	// checksum = read_cmd ^ object_ID ^ 0 ^ data;
 	// Uart2::getInstance().putChar(checksum, 0);
 
-	// if (if_ACK())
-	// {
+	// // if (if_ACK())
+	// // {
+		// taskDISABLE_INTERRUPTS();
 		printf("Successfully transmitted data!\n");
 		received_data(&buf);
-		printf("byte 1: %02x\n", buf);
+		// printf("byte 1: %02x\n", buf);
 		received_data(&buf);
-		printf("byte 2: %02x\n", buf);
+		// printf("byte 2: %02x\n", buf);
 		received_data(&buf);
-		printf("byte 3: %02x\n", buf);
+		// printf("byte 3: %02x\n", buf);
 		received_data(&buf);
-		printf("byte 4: %02x\n", buf);
+		// printf("byte 4: %02x\n", buf);
 		received_data(&buf);
-		printf("byte 5: %02x\n", buf);
+		printf("byte 5: %i\n", (uint8_t)buf);
+
+		IO_VS1053_setVolume((uint8_t)buf);
 		received_data(&buf);
-		printf("byte 6: %02x\n", buf);
+		// printf("byte 6: %02x\n", buf);
+		// taskENABLE_INTERRUPTS();
+
 	// }
 	// else if (if_NACK())
 	// {
@@ -103,6 +139,7 @@ void read_slider(void)
 	// 	printf("Invalid data sent to LCD.\n");
 	// }
 	// puts("fired");
+		// portENABLE_INTERRUPTS();
 
 }
 
@@ -200,6 +237,45 @@ void send_bearing_to_LCD(uint32_t bearing_value, bool gps_locked)
 		Uart2::getInstance().putChar(0x5B, 0);
 
 	}
+}
+static bool pratham = false; 
+
+void playButton(void)
+{
+	// Our parameter was the orientation tasks' pointer, but you may want to check for NULL pointer first.
+    scheduler_task *task1 = scheduler_task::getTaskPtrByName("playMP3");
+
+    pratham = pratham ? false : true;
+
+    // You can use FreeRTOS API or the wrapper resume() or suspend() methods
+    if(!pratham)
+    {
+     	vTaskSuspend(task1->getTaskHandle());  // Can also use: compute->resume();
+     	printf("suspending\n");
+    }
+    else
+    {
+    	vTaskResume(task1->getTaskHandle());  // Can also use: compute->resume();
+    	printf("resuming\n");
+    }
+    
+	// printf("fired\n");
+}
+
+void fctNextSong(void)
+{
+	// close current song
+	// decrement sonsg 
+	xSemaphoreGiveFromISR(nextSong, NULL);
+	// puts("next");
+}
+
+void fctPreviousSong(void)
+{
+	// close current song
+	// decrement song
+	xSemaphoreGiveFromISR(previousSong, NULL); 
+	// puts("previous");
 }
 
 void send_static_text(char object_index, char * string)

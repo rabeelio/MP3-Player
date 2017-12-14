@@ -42,30 +42,120 @@ static uint16_t bufferOffset = 0;
 static bool oneTime = false;
 static uint8_t num = 0;
 static char screenText[] = "sunny leone";
+extern SemaphoreHandle_t testSem;
+extern SemaphoreHandle_t nextSong;
+extern SemaphoreHandle_t previousSong;
+
+// static
 
 // display task read/write -> sends queue data to playMP3 task 
 
+class prevSongTask : public scheduler_task{
+public: 
+    prevSongTask(uint8_t priority) : scheduler_task("prevSongTask", 1024, priority, NULL)
+    {
+
+    }
+    bool run(void *p)
+    {
+        if(xSemaphoreTake(previousSong, portMAX_DELAY))
+        {
+            if (num == 0)
+            {
+
+            }
+            else
+            {
+                num--;
+            }
+
+
+            if(num >= 0)
+            {
+                send_static_text(0, getSongName(num));
+                IO_uSD_closeFile();
+                oneTime = false;
+                bufferOffset = 0;
+            }
+            else
+            {
+                num = 0;
+            }
+            printf("previous: %i\n", num);
+        }
+
+        return true;
+    }
+};
+
+
+class nextSongTask : public scheduler_task{
+public: 
+    nextSongTask(uint8_t priority) : scheduler_task("nextSongTask", 1024, priority, NULL)
+    {
+
+    }
+    bool run(void *p)
+    {
+        if(xSemaphoreTake(nextSong, portMAX_DELAY))
+        {
+            num++;
+            if(num <= 9)
+            {
+                send_static_text(0, getSongName(num));
+                IO_uSD_closeFile();
+                oneTime = false;
+                bufferOffset = 0;
+            }
+            else 
+            {
+                num = 9;
+            }
+            printf("next: %i\n", num);
+        }
+        return true;
+    }
+};
+
+
+class volume: public scheduler_task{
+public: 
+    volume(uint8_t priority) : scheduler_task("volume", 1024, priority, NULL)
+    {
+
+    }
+    bool run(void *p)
+    {
+        if(xSemaphoreTake(testSem, portMAX_DELAY))
+        {
+            
+            read_slider();
+            
+            puts("got it!");
+        }
+        return true;
+    }
+};
 
 class display: public scheduler_task{
 public:
     display(uint8_t priority) : scheduler_task("display",2048,priority,NULL)
     {
         LCD_init();
-        // sprintf(screenText, "%s", "sunny leone");
-
+        send_static_text(0, getSongName(num));
 
     }
 
     bool run(void *p)
     {
-        // send_static_text(0, IO_uSD_getCurrentSongsName());
+        
         // read_slider();
         // send_static_text(1, screenText);
         // send_static_text(2, screenText);
         // static uint16_t rpm_clicks = 0;
         // rpm_clicks+=1; 
         // send_data(SPEED_OBJ,0,(uint16_t)rpm_clicks);
-        vTaskDelay(1000);
+        vTaskSuspend(NULL);
         return true;
     }
 };
@@ -75,7 +165,7 @@ public:
     playMP3(uint8_t priority) : scheduler_task("playMP3",2048,priority,NULL)
     {
         IO_VS1053_init();
-        // IO_VS1053_setVolume(100);
+        IO_VS1053_setVolume(100);
         IO_VS1053_setVS1053Clk();
         
 
@@ -93,36 +183,19 @@ public:
 
     bool run(void *p){
 
-        if(SW.getSwitch(1))
+        if (IO_uSD_isFinishedReading())
         {
-            num=0;
-            IO_uSD_closeFile();
-            oneTime = false;
-            bufferOffset = 0;
-        }
+            puts("finished");
+            num++;
+            taskENTER_CRITICAL();
+            send_static_text(0, getSongName(num));
+            taskEXIT_CRITICAL();
 
-        if(SW.getSwitch(2))
-        {
-            num = 1;
-            IO_uSD_closeFile();
-            oneTime = false;
-            bufferOffset = 0;
-        }
-
-        if(SW.getSwitch(3))
-        {
-            num = 2;
-            IO_uSD_closeFile();
-            oneTime = false;
-            bufferOffset = 0;
-        }
-
-        if(SW.getSwitch(4))
-        {
-            num = 9;
-            IO_uSD_closeFile();
-            oneTime = false;
-            bufferOffset = 0;
+            if (num >= 9)
+            {
+                num = 0;
+            }
+            IO_uSD_clearSongFin();
         }
 
         if (oneTime == false)
@@ -132,7 +205,7 @@ public:
 
         }
 
-        if (bufferOffset <= 511)
+        if (bufferOffset <= 511) //
         {
              if(IO_VS1053_writeSDI(buffer, &bufferOffset))
              {
@@ -176,8 +249,10 @@ public:
 int main(void)
 {
 
-    eint3_enable_port0(29, eint_rising_edge, read_slider);
-
+    eint3_enable_port0(29, eint_rising_edge, sliderISR);
+    eint3_enable_port0(30, eint_rising_edge, playButton);
+    eint3_enable_port2(0, eint_rising_edge, fctPreviousSong);
+    eint3_enable_port2(1, eint_rising_edge, fctNextSong);
 
     /**
      * A few basic tasks for this bare-bone system :
@@ -192,6 +267,9 @@ int main(void)
     scheduler_add_task(new terminalTask(PRIORITY_HIGH));
     scheduler_add_task(new playMP3(PRIORITY_HIGH));
     scheduler_add_task(new display(PRIORITY_HIGH));
+    scheduler_add_task(new volume(PRIORITY_HIGH));
+    scheduler_add_task(new nextSongTask(PRIORITY_HIGH));
+    scheduler_add_task(new prevSongTask(PRIORITY_HIGH));
 
 
     /* Consumes very little CPU, but need highest priority to handle mesh network ACKs */
